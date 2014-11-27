@@ -37,6 +37,7 @@ function Layout(graph, parent, options)
 	var isSegmentedRadialCovergence = false;
 	var isRadialCovergence = false;
 	var isRadialImplosion  = false;
+	var isCentralizedRing  = false;
 	var callback_positionUpdated = options.positionUpdated;
 
 	var EPSILON = 0.000001;
@@ -70,16 +71,10 @@ Layout.prototype.createRandom = function(geometries)
 		this.graph.nodes[i].draw(this.parent);
 	}
 
+	
 	//drawing edges as line
-	for(var i = 0; i < this.graph.edges.length; i++)
-	{
-		var e = this.graph.edges[i];
-		if(this.curve)
-			e.drawCurve(this.parent, geometries);
-		else
-			e.drawLine(this.parent, geometries);
-	}
-
+	if(!this.isCentralizedRing)
+		this.drawEdges(geometries);
 }
 /*Layout.prototype.createArcDiagram()
 {
@@ -114,14 +109,7 @@ Layout.prototype.createSegmentedRadialConvergence = function(radius,geometries)
 	}
 	
 	//drawing edges as line
-	for(var i = 0; i < this.graph.edges.length; i++)
-	{
-		var e = this.graph.edges[i];
-		if(this.curve)
-			e.drawCurve(this.parent, geometries);
-		else
-			e.drawLine(this.parent, geometries);
-	}
+	this.drawEdges(geometries);
 
 	this.isSegmentedRadialCovergence = false;
 };
@@ -149,14 +137,7 @@ Layout.prototype.createRadialImplosion = function(radius, geometries)
 	}
 
 	//drawing edges as line
-	for(var i = 0; i < this.graph.edges.length; i++)
-	{
-		var e = this.graph.edges[i];
-		if(this.curve)
-			e.drawCurve(this.parent, geometries);
-		else
-			e.drawLine(this.parent, geometries);
-	}
+	this.drawEdges(geometries);
 
 	
 	this.isRadialImplosion = false;
@@ -167,8 +148,134 @@ Layout.prototype.createRadialConvergence = function(radius, geometries, curveRad
 {
 	this.isRadialCovergence = true;
 	
-	this.createCircle(radius, this.graph.nodes.length, 0);
+	var center  = new THREE.Vector2();
+	this.createCircle(radius, this.graph.nodes.length, 0, center);
 	
+	this.drawEdges(geometries);
+	this.isRadialCovergence = false;
+};
+
+Layout.prototype.createCentralizedRing = function(radius, mainNodes, geometries)
+{
+	this.isCentralizedRing = true;
+	this.createRandom();//createCircle(radius, this.graph.nodes.length, 0, center);
+	
+	// find main nodes (onces with higher connectiviy)
+	// create circle with main nodes
+	var theta =  Math.PI * 2 / mainNodes.length;
+	var angle = 0;
+	var counter = 0;
+	
+	for( var i = 0; i < mainNodes.length; i++)
+	{
+		var x = Math.cos(angle) * radius;
+		var y = Math.sin(angle) * radius;
+		var z = 0;//Math.random() * this.depth - Math.random() * this.depth;
+		
+		mainNodes[i].isSet      = true;
+		mainNodes[i].position.x = x;
+		mainNodes[i].position.y = y;
+		mainNodes[i].position.z = z;
+		
+		angle += theta ;
+	}
+	
+	
+	this.createCentralizedRing_helper(radius -50, mainNodes);
+	
+	
+	//draw egdess
+	this.drawEdges(geometries);
+	this.isCentralizedRing = false;
+	
+};
+
+Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
+{
+	var curz  = Math.random() * this.depth - Math.random() * this.depth;
+	// find main nodes (onces with higher connectiviy)
+	
+	// create circle with main nodes
+	for( var i = 0; i < mainNodes.length; i++)
+	{
+		var dis = 1;
+		if(mainNodes[i].position.y > window.height/2){
+		//	dis = -1;
+		}
+		var z = Math.random() * this.depth - Math.random() * this.depth;
+		
+		for(var j = 0; j< mainNodes[i].nodesTo.length ;j++)
+		{
+			if(mainNodes[i].nodesTo[j].isSet) continue;
+			mainNodes[i].nodesTo[j].isSet      = true;
+			mainNodes[i].nodesTo[j].position.x = (j * 15) + mainNodes[i].position.x * 2.1 * dis;
+			mainNodes[i].nodesTo[j].position.y = (j * 15)+ mainNodes[i].position.y * 2.1 * dis;
+			
+			mainNodes[i].nodesTo[j].position.z = z;
+		}
+		
+		var m = mainNodes[i].nodesFrom.length * 3;
+		console.log(m);
+		for(var j = 0; j< mainNodes[i].nodesFrom.length ;j++)
+		{
+			if(mainNodes[i].nodesFrom[j].isSet) continue;
+			mainNodes[i].nodesFrom[j].isSet      = true;
+			mainNodes[i].nodesFrom[j].position.x = (j * m) + mainNodes[i].position.x * 2.1 * dis;
+			mainNodes[i].nodesFrom[j].position.y = (j + m)+ mainNodes[i].position.y * 2.1 * dis;
+			
+			mainNodes[i].nodesFrom[j].position.z = z;
+		}
+	
+	}
+	
+	var left_nodes = new Array();
+	for( var i = 0; i < this.graph.nodes.length; i++)
+	{
+		var n = this.graph.nodes[i];
+		if(n.isSet == false)
+		{
+			n.position.x = 0;
+			n.position.y = 0;
+			n.position.z = curz;
+			left_nodes.push(n);
+		}
+	}
+
+	console.log(left_nodes.length);
+	if(left_nodes.length <= 0) return;
+	
+	//this.createCentralizedRing_helper(radius + 50, left_nodes);
+};
+
+Layout.prototype.createCentralizedRing_helper1 = function(radius, neighbors, centers){
+	var c = 0;
+	var a = new Array();
+	var all = new Array();
+	var allc = new Array();
+	neighbors.sort();
+	for(var i=0;i< neighbors.length;i++)
+	{
+		if(neighbors[i] == null){
+			if(a.length > 0){
+				var x = this.createCentralizedRing_helper(radius, a, centers[c],false);	
+				x[0].forEach(function(e){ all.push(e); });
+				x[1].forEach(function(e){ allc.push(e); });
+			}
+			a.length  = new Array();
+			c++;
+			continue;
+		}
+		if(!neighbors[i].isSet)
+			a.push(neighbors[i]);
+	}
+	if(all.length > 0)
+		this.createCentralizedRing_helper1(radius, all, allc);
+	
+};
+//--------------
+//functions
+Layout.prototype.drawEdges = function(geometries)
+{
 	//drawing edges as curve
 	for(var i = 0; i < this.graph.edges.length; i++)
 	{
@@ -178,22 +285,30 @@ Layout.prototype.createRadialConvergence = function(radius, geometries, curveRad
 		else
 			e.drawLine(this.parent, geometries);
 	}
-
-	this.isRadialCovergence = false;
+	
 };
-
-//--------------
-//functions
+Layout.prototype.checkIfContain = function(array, node)
+{
+	for(var i = 0;i<array.length;i++)
+	{
+		if(array[i]== null)
+		 	continue;	
+		if(array[i].id == node.id)
+			return true;
+	}
+	return false;
+	
+};
 Layout.prototype.inCircle = function(x,y,z,rad)
 {
 	var a = x*x + y*y + z*z;
-	if(a < rad*rad)
+	if(a < rad * rad)
 		return true;
 	
 	return false;
 };
 
-Layout.prototype.createCircle = function(radius, total, counter){
+Layout.prototype.createCircle = function(radius, total, counter, center){
 	
 	var curz = Math.random() * this.depth - Math.random() * this.depth;
 	var theta =  Math.PI *2 / total;
@@ -203,8 +318,8 @@ Layout.prototype.createCircle = function(radius, total, counter){
 	{
 		//if(n%10 == 0)
 		//	curz = Math.random() * this.depth - Math.random() * this.depth;
-		var x = Math.cos(angle) * radius;
-		var y = Math.sin(angle) * radius;
+		var x = Math.cos(angle) * radius + center.x;
+		var y = Math.sin(angle) * radius + center.y;
 		var z = curz;
 		
 		this.graph.nodes[counter + n].position.x = x;
@@ -231,5 +346,47 @@ Layout.prototype.createSphere = function(n, radius)
 	}
 };
 
-
+Layout.prototype.maxNodesConnections = function(array)
+{
+	var mainNodes = new Array();
+	var mainNodes_ = new Array();
+	var min = 0;
+	
+	// find main nodes (onces with higher connectiviy)
+	for(var i = 0; i < array.length; i++)
+	{
+		var n = array[i];
+		if(array[i].isSet) continue;
+		var length = n.nodesTo.length + n.nodesFrom.length;
+		if(length == 0)
+			mainNodes_.push(n);
+		else
+		{
+			if(mainNodes.length > 0)
+			{ 
+				if(length >= min)
+				{
+					if(length == min) 
+						mainNodes.push(n);
+					else 
+					{
+						mainNodes.pop();
+						mainNodes.push(n);
+						min = length;
+					}
+				}
+			}
+			else
+			{
+				mainNodes.push(n);
+				min = length;
+			}
+		}
+	}
+	console.log("main  " + mainNodes_.length + " " +  mainNodes.length + " min: " + min);
+	for(var i = 0; i < mainNodes_.length; i++)
+		mainNodes.push(mainNodes_[i]);
+		
+	return mainNodes;
+};
  

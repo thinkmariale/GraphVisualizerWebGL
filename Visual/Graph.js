@@ -17,6 +17,7 @@ function Graph()
 function Node(node_id)
 {
   this.id = node_id;
+  this.isSet = false;
   this.nodesTo = [];
   this.nodesFrom = [];
   this.position = {};
@@ -53,6 +54,7 @@ Graph.prototype.addEdge = function(source, target)
 {
   if(source.addConnectedTo(target) === true) 
   {
+	target.addConnectedFrom(source);
     var edge = new Edge(source, target);
     this.edges.push(edge);
     return true;
@@ -64,7 +66,7 @@ Graph.prototype.addEdge = function(source, target)
 //node functions
 Node.prototype.addConnectedTo = function(node)
 {
-  if(this.connectedTo(node) === false)  //same type
+  if(this.connectedTo(node) === false)  //doenst already exist
   {
     this.nodesTo.push(node);
     return true;
@@ -82,6 +84,27 @@ Node.prototype.connectedTo = function(node)
   }
   return false;
 };
+Node.prototype.addConnectedFrom = function(node)
+{
+  if(this.connectedFrom(node) === false)  //doenst already exist
+  {
+    this.nodesFrom.push(node);
+    return true;
+  }
+  return false;
+};
+
+Node.prototype.connectedFrom = function(node)
+{
+  for(var i=0; i < this.nodesFrom.length; i++) {
+    var connectedNode = this.nodesFrom[i];
+    if(connectedNode.id == node.id) {
+      return true;
+    }
+  }
+  return false;
+};
+
 
 Node.prototype.draw = function(parent)
 {

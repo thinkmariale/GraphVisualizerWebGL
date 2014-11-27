@@ -10,7 +10,7 @@ var renderer;
 var scene;
 var camera
 
-var numMaxNodes = 200;
+var numMaxNodes = 150;
 var geometries  = [];
 var nodes       = [];
 var graph ;
@@ -18,7 +18,6 @@ var parent;
 
 function initScene()
 {
-	
 	renderer = new THREE.WebGLRenderer({alpha: true});// How content will be displayed in web
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
@@ -36,20 +35,22 @@ function initScene()
 
 	parent = new THREE.Object3D();
 	scene.add( parent );
-	createGraph();
+	var minNeighborhs = 2;
+	var m = createGraph(minNeighborhs, true);
 
 	layout = new Layout(graph, parent);
-	layout.curve = true;
+	layout.curve = false;
 	//layout.createRandom(geometries);
 	//layout.createSegmentedRadialConvergence(200, geometries);
 	//layout.createRadialConvergence(300, geometries);
-	layout.createRadialImplosion(200,geometries);
+	//layout.createRadialImplosion(200,geometries);
+	layout.createCentralizedRing(130, m, geometries);
 	render();
 	
 }
 
 //Funtion to start the graph creation
-function createGraph()
+function createGraph(minNeighborhs, mainNodes)
 {
 	graph = new Graph();
 	// adding nodes to my graph
@@ -63,34 +64,76 @@ function createGraph()
 		node.data.title = "node " + Math.floor(counter).toString();
 		graph.addNode(node);
 		nodes.push(node);
-		//drawNodes(node);		
 	}
 	
 	//creating edges
-	for(var i = 0; i < numMaxNodes; i++)
+	if(mainNodes)
 	{
-		//adding edges and neighbot nodes
-		var num_egdes = Math.floor(Math.random() * 2);
-		while(num_egdes > 0)
+		var num = numMaxNodes /5;
+		//create the main nodes of the graph
+		var mainN = new Array();
+		for(var i = 0; i < num; i++)
 		{
-			var e = Math.floor(Math.random() * numMaxNodes);
-			while(e==i)
-				e = Math.floor(Math.random() * numMaxNodes);
-			
-			graph.addEdge(nodes[i], nodes[e]);
-			//drawing nodes and edges
-			//drawEgdes(nodes[i], nodes[e]);
-			num_egdes--;
+			nodes[i].data.mainNode = true;
+			mainN.push(nodes[i]);
+			if((i+1) < num)
+			{
+				var x = graph.addEdge(nodes[i], nodes[i+1]);
+				//console.log("added " + x);
+			}
+		}
+		//go through all nodes and create edges
+		for(var i = 0; i < numMaxNodes; i++)
+		{
+			var e = Math.floor(Math.random() * num);
+			if(nodes[i].data.mainNode) continue;
+			graph.addEdge(nodes[i], mainN[e]);
+		}
+		
+		return mainN;
+	}
+	else
+	{
+		for(var i = 0; i < numMaxNodes; i++)
+		{
+			//adding edges and neighbor nodes
+			var num_egdes = Math.floor(Math.random() * minNeighborhs) + 1;
+			var pass = true;
+			if(nodes[i].nodesTo.length + nodes[i].nodesFrom.length  >= minNeighborhs) 
+				pass = false;
+		
+			while(num_egdes > 0 && pass)
+			{
+				var max = 5;
+				var e = Math.floor(Math.random() * numMaxNodes);
+
+				while(e == i || nodes[e].nodesTo.length + nodes[e].nodesFrom.length > (minNeighborhs -1))
+				{
+					if(max <= 0) break;
+					e = Math.floor(Math.random() * numMaxNodes);
+					max--;
+				}
+				//adding connection bw nodes
+				if(max > 0)
+					graph.addEdge(nodes[i], nodes[e]);
+
+				//drawing nodes and edges
+				if(num_egdes == 1) pass = false;
+				num_egdes--;
+			}
+			console.log("edges " + i + " "  + nodes[i].nodesTo.length + " " +  nodes[i].nodesFrom.length + " total " 
+						+ (nodes[i].nodesTo.length + nodes[i].nodesFrom.length ));
+
 		}
 	}
-	
+
 }
 
 //Function to draw the nodes of the graph
 function drawNodes(node_)
 {
 	var geometry = new THREE.SphereGeometry( 5, 15, 15 );
-	var material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff, opacity: 0.7  } );
+	var material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xff0fff, opacity: 0.7  } );
     var draw_obj = new THREE.Mesh( geometry, material );
 
 	//set position of new node
