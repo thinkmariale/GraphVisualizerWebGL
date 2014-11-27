@@ -177,12 +177,10 @@ Layout.prototype.createCentralizedRing = function(radius, mainNodes, geometries)
 		mainNodes[i].position.y = y;
 		mainNodes[i].position.z = z;
 		
-		angle += theta ;
+		angle += theta;
 	}
 	
-	
 	this.createCentralizedRing_helper(radius -50, mainNodes);
-	
 	
 	//draw egdess
 	this.drawEdges(geometries);
@@ -191,17 +189,10 @@ Layout.prototype.createCentralizedRing = function(radius, mainNodes, geometries)
 };
 
 Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
-{
-	var curz  = Math.random() * this.depth - Math.random() * this.depth;
-	// find main nodes (onces with higher connectiviy)
-	
+{	
 	// create circle with main nodes
 	for( var i = 0; i < mainNodes.length; i++)
 	{
-		var dis = 1;
-		if(mainNodes[i].position.y > window.height/2){
-		//	dis = -1;
-		}
 		var z = Math.random() * this.depth - Math.random() * this.depth;
 		
 		for(var j = 0; j< mainNodes[i].nodesTo.length ;j++)
@@ -215,17 +206,15 @@ Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
 		}
 		
 		var m = mainNodes[i].nodesFrom.length * 3;
-		console.log(m);
-		for(var j = 0; j< mainNodes[i].nodesFrom.length ;j++)
+				for(var j = 0; j< mainNodes[i].nodesFrom.length ;j++)
 		{
 			if(mainNodes[i].nodesFrom[j].isSet) continue;
 			mainNodes[i].nodesFrom[j].isSet      = true;
-			mainNodes[i].nodesFrom[j].position.x = (j * m) + mainNodes[i].position.x * 2.1 * dis;
-			mainNodes[i].nodesFrom[j].position.y = (j + m)+ mainNodes[i].position.y * 2.1 * dis;
-			
+			mainNodes[i].nodesFrom[j].position.x = (j * m) + mainNodes[i].position.x * 2.1;
+			var y_ = Math.random() * 20 - Math.random() * 20 ;
+			mainNodes[i].nodesFrom[j].position.y = ( m + y_)+ mainNodes[i].position.y * (2.1) ;
 			mainNodes[i].nodesFrom[j].position.z = z;
 		}
-	
 	}
 	
 	var left_nodes = new Array();
@@ -235,7 +224,7 @@ Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
 		if(n.isSet == false)
 		{
 			n.position.x = 0;
-			n.position.y = 0;
+			n.position.y = 100;
 			n.position.z = curz;
 			left_nodes.push(n);
 		}
@@ -247,31 +236,7 @@ Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
 	//this.createCentralizedRing_helper(radius + 50, left_nodes);
 };
 
-Layout.prototype.createCentralizedRing_helper1 = function(radius, neighbors, centers){
-	var c = 0;
-	var a = new Array();
-	var all = new Array();
-	var allc = new Array();
-	neighbors.sort();
-	for(var i=0;i< neighbors.length;i++)
-	{
-		if(neighbors[i] == null){
-			if(a.length > 0){
-				var x = this.createCentralizedRing_helper(radius, a, centers[c],false);	
-				x[0].forEach(function(e){ all.push(e); });
-				x[1].forEach(function(e){ allc.push(e); });
-			}
-			a.length  = new Array();
-			c++;
-			continue;
-		}
-		if(!neighbors[i].isSet)
-			a.push(neighbors[i]);
-	}
-	if(all.length > 0)
-		this.createCentralizedRing_helper1(radius, all, allc);
-	
-};
+
 //--------------
 //functions
 Layout.prototype.drawEdges = function(geometries)
