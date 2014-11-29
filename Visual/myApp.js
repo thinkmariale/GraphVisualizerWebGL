@@ -10,7 +10,7 @@ var renderer;
 var scene;
 var camera
 
-var numMaxNodes = 150;
+var numMaxNodes = 50;
 var geometries  = [];
 var nodes       = [];
 var graph ;
@@ -36,15 +36,17 @@ function initScene()
 	parent = new THREE.Object3D();
 	scene.add( parent );
 	var minNeighborhs = 2;
-	var m = createGraph(minNeighborhs, true);
+	var mainNodesInGraph = false;
+	var m = createGraph(minNeighborhs, mainNodesInGraph);
 
 	layout = new Layout(graph, parent);
-	layout.curve = false;
+	layout.curve = true;
 	//layout.createRandom(geometries);
 	//layout.createSegmentedRadialConvergence(200, geometries);
 	//layout.createRadialConvergence(300, geometries);
 	//layout.createRadialImplosion(200,geometries);
-	layout.createCentralizedRing(130, m, geometries);
+	//layout.createCentralizedRing(130, m, geometries);
+	layout.createSphereGraph(200, geometries);
 	render();
 	
 }
@@ -76,11 +78,14 @@ function createGraph(minNeighborhs, mainNodes)
 		{
 			nodes[i].data.mainNode = true;
 			mainN.push(nodes[i]);
-			if((i+1) < num)
-			{
-				var x = graph.addEdge(nodes[i], nodes[i+1]);
+			var r = Math.floor(Math.random() * num) ;
+			while(r == i)
+				r = Math.floor(Math.random() * num) ;
+			//if((i+1) < num)
+			//{
+				var x = graph.addEdge(nodes[i], nodes[r]);
 				//console.log("added " + x);
-			}
+			//}
 		}
 		//go through all nodes and create edges
 		for(var i = 0; i < numMaxNodes; i++)
@@ -121,8 +126,8 @@ function createGraph(minNeighborhs, mainNodes)
 				if(num_egdes == 1) pass = false;
 				num_egdes--;
 			}
-			console.log("edges " + i + " "  + nodes[i].nodesTo.length + " " +  nodes[i].nodesFrom.length + " total " 
-						+ (nodes[i].nodesTo.length + nodes[i].nodesFrom.length ));
+			//console.log("edges " + i + " "  + nodes[i].nodesTo.length + " " +  nodes[i].nodesFrom.length + " total " 
+			//			+ (nodes[i].nodesTo.length + nodes[i].nodesFrom.length ));
 
 		}
 	}

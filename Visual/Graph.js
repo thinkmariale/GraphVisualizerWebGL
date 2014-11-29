@@ -162,9 +162,9 @@ Edge.prototype.drawLine = function(parent, geometries)
 Edge.prototype.drawCurve = function(parent, geometries, curveRad)
 {
 	var parameters = parameters || {};
-	var SUBDIVISIONS = 40;
+	var SUBDIVISIONS = 60;
 	if(curveRad == null) 
-		curveRad = -0.1;
+		curveRad = 0;//-0.1;
 	
 	var mid = new THREE.Vector3();
 	mid.x = (this.target.position.x + this.source.position.x )/2 * curveRad;
