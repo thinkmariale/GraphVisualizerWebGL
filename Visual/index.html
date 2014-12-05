@@ -11,11 +11,10 @@
 	
     <script>
 		// In your JavaScript
-		  var uid, accessToken, group;
+		var uid, accessToken, group;
 		var auth_response_change_callback = function(response) {
 			console.log("auth_response_change_callback");
-		 	console.log(response);
-			
+		 	console.log(response);	
 		}
 		function updateStatusCallback()
 		{
@@ -43,6 +42,7 @@
 								/* handle the result */
 								console.log("group");
 								console.log(response);
+								loadNodes(response);
 								
 							}
 							else  console.log( response );
@@ -58,10 +58,10 @@
 				}
 			});
 		}
-		window.onload = function() {
+		/*window.onload = function() {
 		   var layout;
 		   initScene();
-		};
+		};*/
 		$(document).ready(function() {
 			$.ajaxSetup({ cache: true });
 			$.getScript('//connect.facebook.net/en_UK/all.js', function(){
@@ -85,8 +85,6 @@
 				//$('#loginbutton,#feedbutton').removeAttr('disabled');
 				FB.getLoginStatus(updateStatusCallback);
 
-				
-	  
 			});
 		});
 		
@@ -95,7 +93,14 @@
 	</script>
 	
 	<script>
-	
+		function startGraph()
+		{
+			if(document.getElementById("startG").textContent == "Graph Loaded")
+				return;
+			document.getElementById("startG").textContent = "Graph Loaded"	
+		 	var layout;
+			initScene();	
+		}
     </script>
 	
 </head>
@@ -103,5 +108,6 @@
 	
 <body>
 <fb:login-button autologoutlink="true"></fb:login-button>	
+	<button id ="startG" onclick="startGraph()"> Strat Graph </button>
 </body>
 </html>

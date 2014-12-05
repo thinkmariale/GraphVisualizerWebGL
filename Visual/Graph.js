@@ -18,6 +18,7 @@ function Node(node_id)
 {
   this.id = node_id;
   this.isSet = false;
+  this.weight = 0;
   this.nodesTo = [];
   this.nodesFrom = [];
   this.position = {};
@@ -64,6 +65,10 @@ Graph.prototype.addEdge = function(source, target)
 
 //--------
 //node functions
+Node.prototype.updateWeight = function(w)
+{
+	this.weight += w;
+};
 Node.prototype.addConnectedTo = function(node)
 {
   if(this.connectedTo(node) === false)  //doenst already exist
@@ -111,18 +116,18 @@ Node.prototype.draw = function(parent)
 	var geometry = new THREE.SphereGeometry( 5, 15, 15 );
 	var material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xf0ffff, opacity: 0.7  } );
     var draw_obj = new THREE.Mesh( geometry, material );
-
 	
 	draw_obj.position.x = this.position.x;
 	draw_obj.position.y = this.position.y;
 	draw_obj.position.z = this.position.z;
-	var textOpt = ["10pt", "", ""];
-	if(this.data.title === undefined)
+	var textOpt = ["20pt", "", ""];
+	
+	if(this.data.name === undefined)
 	{
 		var label = new THREE.Label("temp label", textOpt);	
 	}
 	else{
-		var label = new THREE.Label(this.data.title, textOpt);	
+		var label = new THREE.Label(this.data.name, textOpt);	
 	}
 	
 	label.position.x = draw_obj.position.x;
@@ -130,7 +135,7 @@ Node.prototype.draw = function(parent)
 	label.position.z = draw_obj.position.z;
 	
 	this.data.label_object = label;
-	//parent.add( node_.data.label_object );
+	parent.add( this.data.label_object );
 	
 	draw_obj.name = this.data.title;
 	draw_obj.id   = this.id;

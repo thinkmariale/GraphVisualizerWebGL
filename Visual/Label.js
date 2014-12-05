@@ -1,5 +1,6 @@
 /**
-  @author David Piegza
+  Original @author David Piegza
+  Estented by @author Maria Alejandra Montenegro
 
   Implements a label for an object.
 

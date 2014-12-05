@@ -37,7 +37,8 @@ function initScene()
 	scene.add( parent );
 	var minNeighborhs = 2;
 	var mainNodesInGraph = false;
-	var m = createGraph(minNeighborhs, mainNodesInGraph);
+	if(graph.nodes.length < 0)
+		var m = createGraph(minNeighborhs, mainNodesInGraph);
 
 	layout = new Layout(graph, parent);
 	layout.curve = true;
@@ -51,6 +52,34 @@ function initScene()
 	
 }
 
+//function to load facebook JSON file into nodes for the graph
+function loadNodes(response)
+{
+	graph = new Graph();
+	
+	for( var n in response.data)
+	{
+		var post = response.data[n];
+		var node = graph.getNode(post.from.id);
+		if(node == null)
+		{
+			node = new Node( post.from.id);
+			node.data.message = post.message;
+			node.data.name = post.from.name;
+			graph.addNode(node);
+			nodes.push(node);
+			console.log(node.data.name);	
+		}
+		else {
+			node.updateWeight(1);
+			console.log(node.data.name);	
+			console.log(node.weight);	
+		}
+		
+		//add connections through comments
+	}
+	
+}
 //Funtion to start the graph creation
 function createGraph(minNeighborhs, mainNodes)
 {
