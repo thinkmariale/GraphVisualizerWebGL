@@ -33,11 +33,11 @@ function Layout(graph, parent, options)
 	this.depth  = options.depth  || 200;
 	 
 	//function called
-	var curve = false;
-	var isSegmentedRadialCovergence = false;
-	var isRadialCovergence = false;
-	var isRadialImplosion  = false;
-	var isCentralizedRing  = false;
+	this.curve = false;
+	this.allLayouts = ["Random","SegRadialCov","RadialCov","RadialImp","CentralizedRing","Sphere"];
+	this.currentLayout = this.allLayouts[0];
+	this.isHelper = false;
+	
 	var callback_positionUpdated = options.positionUpdated;
 
 	var EPSILON = 0.000001;
@@ -53,12 +53,19 @@ function Layout(graph, parent, options)
 	var mean_time = 0;
 }
 
+Layout.prototype.setLayout = function(id)
+{
+	if(id < 0 || id > this.allLayouts.length) return;
+	this.currentLayout = this.allLayouts[id];
+}
 Layout.prototype.createRandom = function(geometries)
 {
+	this.setLayout(0);
+	
 	//set position of new node
 	var area_x = 350;
 	var area_y = 300;
-	var area_z = 100;
+	var area_z = 200;
   
 	for(var i = 0; i < this.graph.nodes.length; i++)
 	{
@@ -69,11 +76,12 @@ Layout.prototype.createRandom = function(geometries)
 	   	this.graph.nodes[i].position.y = y;
 	   	this.graph.nodes[i].position.z = z; 
 		this.graph.nodes[i].draw(this.parent);
+		
+		
 	}
 
-	
 	//drawing edges as line
-	if(!this.isCentralizedRing)
+	if(!this.isHelper)
 		this.drawEdges(geometries);
 }
 /*Layout.prototype.createArcDiagram()
@@ -83,24 +91,24 @@ Layout.prototype.createRandom = function(geometries)
 */
 
 
+// Circular visualization of graph. Nodes are arranges in circles.
+// the amount of nodes per circle is determined by this.numNodesCircumference;
 Layout.prototype.createSegmentedRadialConvergence = function(radius,geometries)
 {
+	this.setLayout(1);
 	var counter = 0;
 	var curRad  = radius;
 	
-	this.isSegmentedRadialCovergence = true;
-	
+	var center  = new THREE.Vector2();
 	while(counter < this.graph.nodes.length)
 	{
-		
 		var total = this.numNodesCircumference;
-	
 		//make sure we have enough, else justa dd remaining
 		if((counter + total) > this.graph.nodes.length)
 			total = Math.floor(this.graph.nodes.length - counter);
 		
 		//creading current circle
-		this.createCircle(curRad,total,counter);
+		this.createCircle(curRad,total,counter, center);
 		
 		if(this.createRadialImplosion == true)
 			return;
@@ -111,12 +119,23 @@ Layout.prototype.createSegmentedRadialConvergence = function(radius,geometries)
 	//drawing edges as line
 	this.drawEdges(geometries);
 
-	this.isSegmentedRadialCovergence = false;
 };
 
+
+// Circular visualization of graph. Nodes are arranges in ONE big circle.
+Layout.prototype.createRadialConvergence = function(radius, geometries, curveRad)
+{
+	this.setLayout(2);	
+	
+	var center  = new THREE.Vector2();
+	this.createCircle(radius, this.graph.nodes.length, 0, center);
+	this.drawEdges(geometries);
+};
+
+// Circular visualization of graph. Nodes are arranges in ONE big circle.
 Layout.prototype.createRadialImplosion = function(radius, geometries)
 {	
-	this.isRadialImplosion = true;
+	this.setLayout(3);
 	var n = Math.floor(this.graph.nodes.length/2);
 	this.createSphere(n, radius);
 	
@@ -134,30 +153,23 @@ Layout.prototype.createRadialImplosion = function(radius, geometries)
 	   	this.graph.nodes[i].position.y = vertex.y;
 	   	this.graph.nodes[i].position.z = vertex.z; 
 		this.graph.nodes[i].draw(this.parent);
+		
+		
 	}
 
 	//drawing edges as line
 	this.drawEdges(geometries);
 
-	
-	this.isRadialImplosion = false;
 };
 
-
-Layout.prototype.createRadialConvergence = function(radius, geometries, curveRad)
-{
-	this.isRadialCovergence = true;
-	
-	var center  = new THREE.Vector2();
-	this.createCircle(radius, this.graph.nodes.length, 0, center);
-	
-	this.drawEdges(geometries);
-	this.isRadialCovergence = false;
-};
-
+// Graph visualization which consists of a set of mainNodes. The mainNodes are the 
+// nodes in the graph wiht highest connectivity. Once we have this nodes, the children of this nodes
+// are arranged around the parent node; creating a heirarchy view of the graph
+// This Function used the createCentralizedRing_helper to create the visualization  recursevly 
 Layout.prototype.createCentralizedRing = function(radius, mainNodes, geometries)
 {
-	this.isCentralizedRing = true;
+	this.setLayout(4);
+	this.isHelper = true;
 	this.createRandom();//createCircle(radius, this.graph.nodes.length, 0, center);
 	
 	// find main nodes (onces with higher connectiviy)
@@ -180,12 +192,11 @@ Layout.prototype.createCentralizedRing = function(radius, mainNodes, geometries)
 	
 	this.createCentralizedRing_helper(radius - 100, mainNodes);
 	
+	this.isHelper = false;
 	//draw egdess
 	this.drawEdges(geometries);
-	this.isCentralizedRing = false;
-	
 };
-
+// Function helper of createCentralizedRing
 Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
 {	
 	// create circle with main nodes
@@ -204,12 +215,9 @@ Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
 			
 			mainNodes[i].nodesFrom[j].isSet      = true;
 			mainNodes[i].nodesFrom[j].position.z = z;
-			
 			mainNodes[i].nodesFrom[j].position.x = x + mainNodes[i].position.x * 2.1;//(j * m) + mainNodes[i].position.x * 2.1;
 			var y_ = Math.random() * 20 - Math.random() * 20 ;
 			mainNodes[i].nodesFrom[j].position.y = y + mainNodes[i].position.y * 2.1;//( m + y_)+ mainNodes[i].position.y * (2.1) ;
-			
-			
 			
 			angle += theta;
 		}
@@ -234,8 +242,10 @@ Layout.prototype.createCentralizedRing_helper = function(radius, mainNodes)
 	//this.createCentralizedRing_helper(radius + 50, left_nodes);
 };
 
+// Graph visulization with nodes around a sphere
 Layout.prototype.createSphereGraph = function(radius, geometries)
 {
+	this.setLayout(5);
 	this.createSphere(this.graph.nodes.length, radius);
 	//draw edges
 	this.drawEdges(geometries,-5);
@@ -257,6 +267,16 @@ Layout.prototype.drawEdges = function(geometries,rad)
 	}
 	
 };
+Layout.prototype.reDraw = function(geometries)
+{
+	for(var i = 0; i < this.graph.nodes.length; i++)
+		this.graph.nodes[i].draw(this.parent);
+	
+	//if(curLayout == "sphere")
+	//	this.drawEdges(geometries,-5);
+	//else
+		this.drawEdges(geometries);
+}
 Layout.prototype.checkIfContain = function(array, node)
 {
 	for(var i = 0;i<array.length;i++)
@@ -281,15 +301,18 @@ Layout.prototype.inCircle = function(x,y,z,rad)
 Layout.prototype.createCircle = function(radius, total, counter, center){
 	
 	var curz = Math.random() * this.depth - Math.random() * this.depth;
-	var theta =  Math.PI *2 / total;
+	var theta =  Math.PI * 2 / (total);
 	var angle = 0;
-		
+	
 	for(var n = 0; n < total ; n++)
 	{
-		//if(n%10 == 0)
-		//	curz = Math.random() * this.depth - Math.random() * this.depth;
-		var x = Math.cos(angle) * radius + center.x;
-		var y = Math.sin(angle) * radius + center.y;
+		var rad = radius;
+		var weight = this.graph.nodes[counter + n].weight;
+		//console.log(this.graph.nodes[counter + n].weight);
+		if(weight > 10)
+			rad += (2 * weight);
+		var x = Math.cos(angle) * rad + center.x;
+		var y = Math.sin(angle) * rad + center.y;
 		var z = curz;
 		
 		this.graph.nodes[counter + n].position.x = x;
@@ -297,7 +320,28 @@ Layout.prototype.createCircle = function(radius, total, counter, center){
 		this.graph.nodes[counter + n].position.z = z;
 		this.graph.nodes[counter + n].draw(this.parent);
 		
-		angle +=theta;
+		console.log(weight + " " + this.graph.nodes[counter + n].data.name);
+		var newAngle = angle;
+		var disp = 1.65;
+		var wDis = 5;
+		if(weight > 1)
+			wDis = weight * 1.5;
+		
+		if( newAngle > 1.57 && newAngle < 4.71) {
+			this.graph.nodes[counter + n].data.label_object.position.y = y - 24;
+			this.graph.nodes[counter + n].data.label_object.rotation.z = newAngle - Math.PI /1;
+			this.graph.nodes[counter + n].data.label_object.translateX(-((Math.floor(this.graph.nodes[counter + n].data.label_object.width)/disp) + wDis) )		
+		}
+		else{
+			this.graph.nodes[counter + n].data.label_object.position.y = y - 24;
+			this.graph.nodes[counter + n].data.label_object.rotation.z = newAngle;
+			this.graph.nodes[counter + n].data.label_object.translateX((Math.floor(this.graph.nodes[counter + n].data.label_object.width)/disp) + wDis);
+		}
+		//this.graph.nodes[counter + n].data.label_object.position.x = x;// + 50;
+  		//this.graph.nodes[counter + n].data.label_object.position.y = y + 100;
+		//this.data.label_object.position.z = this.data.label_object.position.z;
+		
+		angle += theta;
 	}	
 };
 

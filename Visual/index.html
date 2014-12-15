@@ -3,12 +3,14 @@
 <head>
     <title>My Graphs with Three.js</title>    
     <script src="build/three.min.js"></script>
-	<script src="myApp.js"></script>
-	<script src="Graph.js"></script>
-	<script src="Layout.js"></script>
-	<script src="Label.js"></script>
+	<script src="js/controls/TrackballControls.js"></script>
+	<script src="myJS/myApp.js"></script>
+	<script src="myJS/Graph.js"></script>
+	<script src="myJS/Layout.js"></script>
+	<script src="myJS/Label.js"></script>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 	
+	<link href="css/style.css" rel="stylesheet" type="text/css" />
     <script>
 		// In your JavaScript
 		var uid, accessToken, group;
@@ -58,11 +60,15 @@
 				}
 			});
 		}
-		/*window.onload = function() {
-		   var layout;
-		   initScene();
-		};*/
+		window.onload = function() {
+		   //var layout;
+		  // initScene();
+			
+			
+		};
 		$(document).ready(function() {
+			
+			
 			$.ajaxSetup({ cache: true });
 			$.getScript('//connect.facebook.net/en_UK/all.js', function(){
 				
@@ -88,18 +94,41 @@
 			});
 		});
 		
-		
-	
 	</script>
 	
 	<script>
+		function addChangeConditions()
+		{
+			$("#r1").prop("checked", true);
+			$("#r4").prop("checked", true);
+			
+			$("#r1, #r2 ,#r3, #r4").change(function () {
+				
+				if(this.id === "r3")
+					changeDisplay(this.checked);
+				if(this.id === "r4")
+					changeDisplay(!this.checked);
+			});	
+		}
 		function startGraph()
 		{
-			if(document.getElementById("startG").textContent == "Graph Loaded")
+			//if(document.getElementById("startG").textContent == "Graph Loaded")
+			if($("#startG").text() == "Graph Loaded")
 				return;
-			document.getElementById("startG").textContent = "Graph Loaded"	
+			$("#startG").text("Graph Loaded");
+			
+			
+			//adding change conditions to all the radio buttons
+			addChangeConditions();
+			
 		 	var layout;
 			initScene();	
+		}
+		function getComboLayout(sel)
+		{
+			if($("#startG").text() != "Graph Loaded")
+				return;
+			changeLayout(sel.value);
 		}
     </script>
 	
@@ -108,6 +137,30 @@
 	
 <body>
 <fb:login-button autologoutlink="true"></fb:login-button>	
-	<button id ="startG" onclick="startGraph()"> Strat Graph </button>
+	
+	<div class = "Controllers">
+		<button id ="startG" onclick="startGraph()"> Strat Graph </button>
+		<select id = "layoutID" onchange="getComboLayout(this)">
+			<option value="Random">Random</option>
+			<option value="SegmentedRadialConvergence">Segmented Radial Convergence</option>
+			<option value="RadialConvergence">Radial Convergence</option>
+			<option value="RadialImplosion">Radial Implosion</option>	
+			<option value="SphereGraph">SphereGraph</option>
+		</select>
+	
+		<form>
+			<label>Names:</label>
+			<input id ="r1" type="radio" name="nameLabel" value="on" checked ><label>ON </label>
+			<input id ="r2" type="radio" name="nameLabel" value="off"><label>OFF</label>
+		</form>
+		<form>
+			<label>Edges: </label>
+			<input id ="r3" type="radio" name="nameLabel" value="ce"><label>Curved</label>
+			<input id ="r4" type="radio" name="nameLabel" value="ne" checked ><label>Non Curved</label>
+		</form>
+	</div>
+	
+	<div id ="MyGraph"></div>
+	
 </body>
 </html>

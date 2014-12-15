@@ -38,11 +38,12 @@ Graph.prototype.addNode = function(node)
 {
 	if(this.nodeSet[node.id] == undefined)
 	{
-		 this.nodeSet[node.id] = node;
+		node.data.color = Math.random() * 0xf0ffff;
+		this.nodeSet[node.id] = node;
     	this.nodes.push(node);
 		return true;
 	}
-	console.log("dd");
+
 	return false;
 };
 
@@ -58,10 +59,11 @@ Graph.prototype.addEdge = function(source, target)
 	target.addConnectedFrom(source);
     var edge = new Edge(source, target);
     this.edges.push(edge);
-    return true;
+    return edge;
   }
   return false;
 };
+
 
 //--------
 //node functions
@@ -111,10 +113,11 @@ Node.prototype.connectedFrom = function(node)
 };
 
 
-Node.prototype.draw = function(parent)
+Node.prototype.draw = function(parent,isRotated)
 {
-	var geometry = new THREE.SphereGeometry( 5, 15, 15 );
-	var material = new THREE.MeshBasicMaterial( { color: Math.random() * 0xf0ffff, opacity: 0.7  } );
+	var rad = (this.weight) + 3;
+	var geometry = new THREE.SphereGeometry( rad, 15, 15 );
+	var material = new THREE.MeshBasicMaterial( { color: this.data.color, opacity: 0.7  } );
     var draw_obj = new THREE.Mesh( geometry, material );
 	
 	draw_obj.position.x = this.position.x;
@@ -130,9 +133,11 @@ Node.prototype.draw = function(parent)
 		var label = new THREE.Label(this.data.name, textOpt);	
 	}
 	
+	
 	label.position.x = draw_obj.position.x;
-  	label.position.y = draw_obj.position.y - 20;
+  	label.position.y = draw_obj.position.y +( rad-3);
 	label.position.z = draw_obj.position.z;
+	//label.rotation.z = -Math.PI / 4;
 	
 	this.data.label_object = label;
 	parent.add( this.data.label_object );

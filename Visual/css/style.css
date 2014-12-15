@@ -1,0 +1,19 @@
+@charset "utf-8";
+
+body {
+	background-color: black;
+	color: #FFFFFF;
+}
+
+.Controllers
+{
+	width: 18%;
+	background-color: #708090;
+}
+.Controllers input[type="radio"] + label, label {
+	color: #FFFFFF;
+}
+
+#MyGraph {
+	
+}
